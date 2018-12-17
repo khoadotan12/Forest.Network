@@ -1,0 +1,12 @@
+{
+  "type": "service_account",
+  "project_id": "forest-network-dack",
+  "private_key_id": "033bb8e5872115a6b28887fc7fbddd2e981d6262",
+  "private_key": "-----BEGIN PRIVATE KEY-----\nMIIEvgIBADANBgkqhkiG9w0BAQEFAASCBKgwggSkAgEAAoIBAQC6Dd79FlxHGWOv\nzjf0Ol5x5v3r/mYc/SovEMPgy/5e+qm8DdKfmvh5Po+AWfaZFXVxWUCS3I1Yuiyu\nDGiTUUZYpWKA3uX8L/FpHtqHpaRyPbWL6M6dsv0wQaayNOfdyeC9zE8cfV1WUvcF\nLxeHQUJ5j3/+kaV4QA+TBC3ZPnUQLHpvnhjEuqPX9i3KQPKw8w39+dpFcEoWBvIv\nDZ9zDL+WsAZKeRhHDl3Rd9o1orPfQkw0+e7xRAL6/H9zl6Y9R4pHADmggbDnMaeg\npJ3TES5Ac/jpmNKwKbgGbj2GxRXjxdEzMUvTtYdXKplGtp7VKFdEP33meUjQU7S+\nf65YufFnAgMBAAECggEAFkMIoRx8KB8NQtZC8wcfkTNuwz5qYMzuBORVpl/iQjfD\nTXa98qOsAsiN38a5RJyWXodWZvwwMXioAJ9dd/Br9rll7ZOTeIxoBLL7ZOsDSo7A\nWqBIRgL1BpbPElhVkhUmE1pkm5JoiPwJBebE7ZsiZWyFMnmiOfQ4U4KsKxKtFnp3\nuQx97r2r5/heo/YElCH1aQ9+6315UiOkoYKfRjpYj9EdPF+ODlfFUT9XaFy6XNUz\nIrfnLbuK+dkthIBt7ySK549zLK1mAnTxoQIi1Tm0/GNEf+Ibhj2Vt+pgiH/bsjHO\npkcnrPYlpEwZJV+AJnMkk174TJTC8fUVYlNjhbxGeQKBgQDeD2nk+n6MGhx2HR84\nl7tHLBSZCwDBbKr0oLj8oH7Yhx7wrQ+ulWQs1S++7jr5ZVg5gvmlsAuhkwVWOKbo\nXGZnHLQK4q0snpdCks+oGYuo9k+D55cokek7KTqXqbhlPuyPa2fXSGkNpxtzivHJ\nxtieeKSttAGsISBlzrEh28lsSwKBgQDWfaTJ20n3zbqvCToKpHf8FjzgrCEXZGPg\nZeJ6xUTTXrCTSVrWs+a6dSumgKazbZlql5xkczMcukh4eQvCK0Z4KVbbCyk2A4lL\n14b7/eiP5YIGRzUUadiLORCX1GV98VrQD3DPyUcaB+3jZyaZ5xrQAv+PIFX1Xw2i\na9kFsvQl1QKBgCgdQrTxp3CpuuB/bEdt6Y/235WyDiXi+pMMgb5pQ+Dbr/QsXzvb\nkugibuif4plw/FoPVgffYIqEo58qxsQNBRa1cbTRtBTuZUbKfKbSTo9sR3r9mCnl\nCev9C6+gIkZv8o4KCg0y8H9d47CgtgMMX89o3d7fOLoeldquVwNVz/I3AoGBAJHd\nxmiEWixM261XsAI20WY9VU9Rn/uBiS68+yWU7HZ2iczQcRdcJwgc0P+dtECHw3Kr\nAm+JrHPX95r+btGwjm7/ZhL25yLVitRqEWFjznm1khRk7qMgTGR5/V/T0OWycpjW\nN1kHv/Pi+pPQvX6inShjMZsLWYnSB7qyb1eh2Mm1AoGBAKo3G88wyNKPxlPgAju5\n98sdrVZK9NNr3GmKDiibLSCOFfnOojM234ABqEkq075tTYndDebkiPwQLdMqf5EZ\nvqpxtTOFy/krYVLgBT/9+933QJBu5KY+EkmNEJhL14zjRaNP0nwjwsR4r6+Hgfds\n+7YuFcHWvJSqPytn+fmt+wBA\n-----END PRIVATE KEY-----\n",
+  "client_email": "firebase-adminsdk-p1yr6@forest-network-dack.iam.gserviceaccount.com",
+  "client_id": "105524422616623723950",
+  "auth_uri": "https://accounts.google.com/o/oauth2/auth",
+  "token_uri": "https://oauth2.googleapis.com/token",
+  "auth_provider_x509_cert_url": "https://www.googleapis.com/oauth2/v1/certs",
+  "client_x509_cert_url": "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-p1yr6%40forest-network-dack.iam.gserviceaccount.com"
+}
