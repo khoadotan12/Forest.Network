@@ -41,8 +41,12 @@ function initialize() {
 }
 
 function checkLastBlock(i) {
-    if (i < MAX_BLOCK)
-        return loadBlock(++index);
+    if (i < MAX_BLOCK) {
+        const server = database.ref('/server');
+        return server.update({
+            block: parseInt(i),
+        }).then(() => loadBlock(++index));
+    }
     return true;
 }
 
@@ -74,10 +78,6 @@ function loadTx(i, hashTx, time) {
     return fetch('https://komodo.forest.network/tx?hash=0x' + hashTx, (error, meta, body) => {
         const resp = JSON.parse(body.toString());
         const success = resp.result.tx_result.tags;
-        const server = database.ref('/server');
-        server.update({
-            block: parseInt(i),
-        });
         if (success) {
             const txSize = resp.result.tx.length;
             const tx = decode(Buffer.from(resp.result.tx, 'base64'));
