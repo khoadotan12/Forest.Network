@@ -24,6 +24,8 @@ function reloadBlock() {
     }
 }
 function initialize() {
+    const http = require('http');
+    setInterval(() => http.get('https://forest-network-dack.herokuapp.com/'), 300000);
     const server = database.ref('/server');
     console.log('Getting data');
     server.once('value', snap => {
