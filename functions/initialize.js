@@ -18,8 +18,19 @@ function reloadBlock() {
         fetch('https://komodo.forest.network/abci_info', (error, meta, body) => {
             const resp = JSON.parse(body.toString());
             MAX_BLOCK = resp.result.response.last_block_height;
-            if (index !== parseInt(MAX_BLOCK))
+            if (index !== parseInt(MAX_BLOCK)) {
                 loadBlock(++index);
+                const ref = database.ref('/');
+                ref.once('value', snap => {
+                    const list = snap.val().users;
+                    for (let i in list)
+                        list[i].energy = increaseEnergy(list[i]);
+                    ref.update({
+                        users: list,
+                    })
+                })
+                // console.log(users);
+            }
         });
     }
 }
@@ -252,6 +263,18 @@ function calculateBandwidth(account, time, txSize) {
     const bandwidth = account.bandwidth;
     const diff = bandwidthTime ? moment(time).unix() - moment(bandwidthTime).unix() : BANDWIDTH_PERIOD;
     return Math.ceil(Math.max(0, (BANDWIDTH_PERIOD - diff) / BANDWIDTH_PERIOD) * bandwidth + txSize);
+}
+
+function increaseEnergy(account) {
+    const bandwidthTime = account.lastTx;
+    const energy = account.energy;
+    const bandwidthLimit = account.balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
+    if (energy >= bandwidthLimit)
+        return energy;
+    const diff = moment().unix() - moment(bandwidthTime).unix()
+    if (diff >= BANDWIDTH_PERIOD)
+        return bandwidthLimit;
+    return energy + (bandwidthLimit - energy) / BANDWIDTH_PERIOD * diff;
 }
 
 module.exports = {
