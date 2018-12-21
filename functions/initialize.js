@@ -1,12 +1,18 @@
 const admin = require('firebase-admin');
 const crypto = require('crypto');
 const fetch = require("fetch").fetchUrl;
+const serviceAccount = require('./config.json');
 const { decode, encode } = require('./transaction');
 const moment = require('moment');
 const vstruct = require('varstruct');
 const base32 = require('base32.js');
 
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: "https://forest-network-dack.firebaseio.com",
+});
 const database = admin.database();
+
 let MAX_BLOCK = 1;
 let index = 1;
 const BANDWIDTH_PERIOD = 86400;
