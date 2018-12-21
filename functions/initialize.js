@@ -3,6 +3,8 @@ const crypto = require('crypto');
 const fetch = require("fetch").fetchUrl;
 const { decode, encode } = require('./transaction');
 const moment = require('moment');
+const vstruct = require('varstruct');
+const base32 = require('base32.js');
 
 const database = admin.database();
 let MAX_BLOCK = 1;
@@ -12,7 +14,14 @@ const MAX_BLOCK_SIZE = 22020096;
 const RESERVE_RATIO = 1;
 const MAX_CELLULOSE = Number.MAX_SAFE_INTEGER;
 const NETWORK_BANDWIDTH = RESERVE_RATIO * MAX_BLOCK_SIZE * BANDWIDTH_PERIOD;
-// setInterval(() => console.log('ping'), 1000);
+
+const Followings = vstruct([
+    { name: 'addresses', type: vstruct.VarArray(vstruct.UInt16BE, vstruct.Buffer(35)) },
+]);
+const PlainTextContent = vstruct([
+    { name: 'type', type: vstruct.UInt8 },
+    { name: 'text', type: vstruct.VarString(vstruct.UInt16BE) },
+]);
 function reloadBlock() {
     if (index === parseInt(MAX_BLOCK)) {
         fetch('https://komodo.forest.network/abci_info', (error, meta, body) => {
@@ -29,7 +38,6 @@ function reloadBlock() {
                         users: list,
                     })
                 })
-                // console.log(users);
             }
         });
     }
@@ -76,7 +84,7 @@ function loadBlock(i) {
             txs.map(etx => {
                 const tx = decode(Buffer.from(etx, 'base64'));
                 const hashtx = crypto.createHash('sha256').update(encode(tx)).digest().toString('hex').toUpperCase();
-                loadTx(i, hashtx, time);
+                loadTx(hashtx, time);
                 return etx;
             });
         }
@@ -86,8 +94,7 @@ function loadBlock(i) {
             }).then(() => checkLastBlock(index));
     });
 }
-
-function loadTx(i, hashTx, time) {
+function loadTx(hashTx, time) {
     return fetch('https://komodo.forest.network/tx?hash=0x' + hashTx, (error, meta, body) => {
         const resp = JSON.parse(body.toString());
         const success = resp.result.tx_result.tags;
@@ -108,7 +115,10 @@ function loadTx(i, hashTx, time) {
                     break;
                 }
                 case 'post': {
-                    post(hashTx, tx, time, txSize);
+                    try {
+                        tx.params.content = PlainTextContent.decode(tx.params.content);
+                    } catch (e) { tx.params.content = undefined };
+                    post(tx, time, txSize);
                     break;
                 }
                 default: {
@@ -211,6 +221,20 @@ function updateAccount(tx, lastTx, txSize) {
                         return checkLastBlock(index);
                     }).catch(e => console.log(e));
                 }
+                case 'followings': {
+                    try {
+                        const followings = Followings.decode(Buffer.from(tx.params.value));
+                        followings.addresses = followings.addresses.map(address => {
+                            const encaddr = base32.encode(address);
+                            return encaddr;
+                        });
+                        return account.update({
+                            followings: followings.addresses,
+                        }).then(() => {
+                            return checkLastBlock(index);
+                        }).catch(e => console.log(e));
+                    } catch (e) { return checkLastBlock(index) }
+                }
                 default: {
                     return account.update({
                         sequence: sequence + 1,
@@ -224,25 +248,19 @@ function updateAccount(tx, lastTx, txSize) {
     });
 }
 
-function post(hashTx, tx, lastTx, txSize) {
+function post(tx, lastTx, txSize) {
     const account = database.ref('/users/' + tx.account);
-    const content = Buffer.from(tx.params.content).toString();
+    const content = tx.params.content;
     account.once('value', snap => {
-        if (snap.exists()) {
+        if (snap.exists() && content) {
             const sequence = snap.val().sequence;
             const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
             let posts = snap.val().posts;
             if (posts)
-                posts.push({
-                    hashTx,
-                    content,
-                })
+                posts.push(content.text);
             else
-                posts = [{
-                    hashTx,
-                    content,
-                }];
+                posts = [content.text];
             return account.update({
                 sequence: sequence + 1,
                 posts: posts,
