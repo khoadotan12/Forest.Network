@@ -169,14 +169,17 @@ function payment(tx, lastTx, txSize) {
         if (snap.exists()) {
             const balance = snap.val().balance;
             const energy = snap.val().energy;
-            const payment = snap.val().payment ? snap.val().payment.push({
+            let payment = snap.val().payment;
+            if (payment)
+                payment.push({
+                    type: 'receive',
+                    amount: tx.params.amount,
+                    address: tx.account,
+                })
+            else payment = [{
                 type: 'receive',
                 amount: tx.params.amount,
-                address: account,
-            }) : [{
-                type: 'receive',
-                amount: tx.params.amount,
-                address: account,
+                address: tx.account,
             }];
             const newenergy = tx.params.amount / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             address.update({
@@ -192,14 +195,17 @@ function payment(tx, lastTx, txSize) {
             const balance = snap.val().balance;
             const bandwidthLimit = (balance - tx.params.amount) / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
-            const payment = snap.val().payment ? snap.val().payment.push({
+            let payment = snap.val().payment;
+            if (payment)
+                payment.push({
+                    type: 'send',
+                    amount: tx.params.amount,
+                    address: tx.account,
+                })
+            else payment = [{
                 type: 'send',
                 amount: tx.params.amount,
-                address,
-            }) : [{
-                type: 'send',
-                amount: tx.params.amount,
-                address,
+                address: tx.account,
             }];
             account.update({
                 sequence: sequence + 1,
