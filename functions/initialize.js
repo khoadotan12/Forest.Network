@@ -28,6 +28,10 @@ const PlainTextContent = vstruct([
     { name: 'type', type: vstruct.UInt8 },
     { name: 'text', type: vstruct.VarString(vstruct.UInt16BE) },
 ]);
+const ReactContent = vstruct([
+    { name: 'type', type: vstruct.UInt8 },
+    { name: 'reaction', type: vstruct.UInt8 },
+]);
 function reloadBlock() {
     if (index === parseInt(MAX_BLOCK)) {
         fetch('https://komodo.forest.network/abci_info', (error, meta, body) => {
@@ -56,7 +60,7 @@ function initialize() {
     server.once('value', snap => {
         if (snap.exists()) {
             index = snap.val().block + 1;
-            fetch('https://komodo.forest.network/abci_info', (error, meta, body) => {
+            fetch('https://fox.forest.network/abci_info', (error, meta, body) => {
                 const resp = JSON.parse(body.toString());
                 MAX_BLOCK = resp.result.response.last_block_height;
                 loadBlock(index);
@@ -124,7 +128,19 @@ function loadTx(hashTx, time) {
                     try {
                         tx.params.content = PlainTextContent.decode(tx.params.content);
                     } catch (e) { tx.params.content = undefined };
-                    post(tx, time, txSize);
+                    post(hashTx, tx, time, txSize);
+                    break;
+                }
+                case 'interact': {
+                    try {
+                        tx.params.content = PlainTextContent.decode(tx.params.content);
+                    } catch (e) {
+                        try {
+                            tx.params.content = ReactContent.decode(tx.params.content);
+                        }
+                        catch (e) { tx.params.content = undefined };
+                    };
+                    interact(tx, time, txSize);
                     break;
                 }
                 default: {
@@ -270,6 +286,9 @@ function updateAccount(tx, lastTx, txSize) {
                 default: {
                     return account.update({
                         sequence: sequence + 1,
+                        lastTx,
+                        bandwidth,
+                        energy: bandwidthLimit - bandwidth,
                     }).then(() => {
                         return checkLastBlock(index);
                     }).catch(e => console.log(e));
@@ -280,7 +299,7 @@ function updateAccount(tx, lastTx, txSize) {
     });
 }
 
-function post(tx, lastTx, txSize) {
+function post(hashTx, tx, lastTx, txSize) {
     const account = database.ref('/users/' + tx.account);
     const content = tx.params.content;
     account.once('value', snap => {
@@ -290,9 +309,17 @@ function post(tx, lastTx, txSize) {
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
             let posts = snap.val().posts;
             if (posts)
-                posts.push(content.text);
+                posts.push(hashTx);
             else
-                posts = [content.text];
+                posts = [hashTx];
+            const postcontent = database.ref('/posts/' + hashTx);
+            postcontent.once('value', snap => {
+                if (!snap.exists()) {
+                    postcontent.set({
+                        content: content.text,
+                    });
+                }
+            });
             return account.update({
                 sequence: sequence + 1,
                 posts: posts,
@@ -302,6 +329,52 @@ function post(tx, lastTx, txSize) {
             }).then(() => {
                 return checkLastBlock(index);
             }).catch(e => console.log(e));
+        }
+        else
+            checkLastBlock(index);
+    });
+}
+
+function interact(tx, lastTx, txSize) {
+    const account = database.ref('/users/' + tx.account);
+    const content = tx.params.content;
+    account.once('value', snap => {
+        if (snap.exists() && content) {
+            const sequence = snap.val().sequence;
+            const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
+            const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
+            account.update({
+                sequence: sequence + 1,
+                bandwidth,
+                lastTx,
+                energy: bandwidthLimit - bandwidth,
+            });
+            switch (content.type) {
+                case 1:
+                    const cmt = database.ref('/posts/' + tx.params.object + '/comment/');
+                    return cmt.push({ account: tx.account, content: content.text }).then(() => checkLastBlock(index));
+                case 2:
+                    const react = database.ref('/posts/' + tx.params.object + '/react/' + tx.account);
+                    switch (content.reaction) {
+                        case 0:
+                            return react.remove().then(() => checkLastBlock(index));
+                        case 1:
+                            return react.set('like').then(() => checkLastBlock(index));
+                        case 2:
+                            return react.set('love').then(() => checkLastBlock(index));
+                        case 3:
+                            return react.set('haha').then(() => checkLastBlock(index));
+                        case 4:
+                            return react.set('wow').then(() => checkLastBlock(index));
+                        case 5:
+                            return react.set('sad').then(() => checkLastBlock(index));
+                        case 6:
+                            return react.set('angry').then(() => checkLastBlock(index));
+                        default: return checkLastBlock(index);
+                    }
+                default:
+                    return checkLastBlock(index);
+            }
         }
         else
             checkLastBlock(index);
