@@ -169,10 +169,20 @@ function payment(tx, lastTx, txSize) {
         if (snap.exists()) {
             const balance = snap.val().balance;
             const energy = snap.val().energy;
+            const payment = snap.val().payment ? snap.val().payment.push({
+                type: 'receive',
+                amount: tx.params.amount,
+                address: account,
+            }) : [{
+                type: 'receive',
+                amount: tx.params.amount,
+                address: account,
+            }];
             const newenergy = tx.params.amount / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             address.update({
                 balance: balance + tx.params.amount,
                 energy: energy + newenergy,
+                payment,
             });
         }
     }),
@@ -182,11 +192,21 @@ function payment(tx, lastTx, txSize) {
             const balance = snap.val().balance;
             const bandwidthLimit = (balance - tx.params.amount) / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
+            const payment = snap.val().payment ? snap.val().payment.push({
+                type: 'send',
+                amount: tx.params.amount,
+                address,
+            }) : [{
+                type: 'send',
+                amount: tx.params.amount,
+                address,
+            }];
             account.update({
                 sequence: sequence + 1,
                 balance: balance - tx.params.amount,
                 lastTx,
                 bandwidth,
+                payment,
                 energy: bandwidthLimit - bandwidth,
             });
         }
@@ -292,13 +312,14 @@ function calculateBandwidth(account, time, txSize) {
 function increaseEnergy(account) {
     const bandwidthTime = account.lastTx;
     const energy = account.energy;
+    const bandwidth = account.bandwidth;
     const bandwidthLimit = account.balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
     if (energy >= bandwidthLimit)
         return energy;
     const diff = moment().unix() - moment(bandwidthTime).unix()
     if (diff >= BANDWIDTH_PERIOD)
         return bandwidthLimit;
-    return energy + (bandwidthLimit - energy) / BANDWIDTH_PERIOD * diff;
+    return (bandwidthLimit - bandwidth)(1 + diff / BANDWIDTH_PERIOD);
 }
 
 module.exports = {
