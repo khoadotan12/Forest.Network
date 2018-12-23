@@ -52,7 +52,7 @@ function reloadBlock() {
                     })
                 }
             } catch (e) {
-                console.log('Reload block', e);
+                console.log(e);
             }
         });
     }
@@ -115,7 +115,7 @@ function loadBlock(i) {
                     block: parseInt(i),
                 }).then(() => checkLastBlock(index));
         } catch (e) {
-            console.log('Load block', e);
+            console.log(e);
             loadBlock(index);
         }
     });
@@ -167,7 +167,7 @@ function loadTx(hashTx, time) {
                 }
             }
         } catch (e) {
-            console.log('Load tx', e);
+            console.log(e);
             loadTx(hashTx, time)
         }
     })
