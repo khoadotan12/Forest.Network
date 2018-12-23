@@ -35,20 +35,24 @@ const ReactContent = vstruct([
 function reloadBlock() {
     if (index === parseInt(MAX_BLOCK)) {
         fetch('https://fox.forest.network/abci_info', (error, meta, body) => {
-            const resp = JSON.parse(body.toString());
-            MAX_BLOCK = resp.result.response.last_block_height;
-            if (index !== parseInt(MAX_BLOCK)) {
-                loadBlock(++index);
-                const ref = database.ref('/');
-                ref.once('value', snap => {
-                    const list = snap.val().users;
-                    const now = moment();
-                    for (let i in list)
-                        list[i].energy = increaseEnergy(list[i], now);
-                    ref.update({
-                        users: list,
+            try {
+                const resp = JSON.parse(body.toString());
+                MAX_BLOCK = resp.result.response.last_block_height;
+                if (index !== parseInt(MAX_BLOCK)) {
+                    loadBlock(++index);
+                    const ref = database.ref('/');
+                    ref.once('value', snap => {
+                        const list = snap.val().users;
+                        const now = moment();
+                        for (let i in list)
+                            list[i].energy = increaseEnergy(list[i], now);
+                        ref.update({
+                            users: list,
+                        })
                     })
-                })
+                }
+            } catch (e) {
+                console.log('Reload block', e);
             }
         });
     }
@@ -61,13 +65,21 @@ function initialize() {
     server.once('value', snap => {
         if (snap.exists()) {
             index = snap.val().block + 1;
-            fetch('https://fox.forest.network/abci_info', (error, meta, body) => {
-                const resp = JSON.parse(body.toString());
-                MAX_BLOCK = resp.result.response.last_block_height;
-                loadBlock(index);
-                setInterval(() => reloadBlock(), 60000);
-                console.log('Loaded block');
-            });
+            getabci_info();
+        }
+    });
+}
+
+function getabci_info() {
+    fetch('https://fox.forest.network/abci_info', (error, meta, body) => {
+        try {
+            const resp = JSON.parse(body.toString());
+            MAX_BLOCK = resp.result.response.last_block_height;
+            loadBlock(index);
+            setInterval(() => reloadBlock(), 60000);
+            console.log('Loaded block');
+        } catch (e) {
+            getabci_info();
         }
     });
 }
@@ -84,69 +96,79 @@ function checkLastBlock(i) {
 
 function loadBlock(i) {
     fetch('https://komodo.forest.network/block?height=' + i, (error, meta, body) => {
-        const resp = JSON.parse(body.toString());
-        const num_txs = resp.result.block_meta.header.num_txs;
-        const server = database.ref('/server');
-        const time = resp.result.block_meta.header.time;
-        if (num_txs !== "0") {
-            const txs = resp.result.block.data.txs;
-            txs.map(etx => {
-                const tx = decode(Buffer.from(etx, 'base64'));
-                const hashtx = crypto.createHash('sha256').update(encode(tx)).digest().toString('hex').toUpperCase();
-                loadTx(hashtx, time);
-                return etx;
-            });
+        try {
+            const resp = JSON.parse(body.toString());
+            const num_txs = resp.result.block_meta.header.num_txs;
+            const server = database.ref('/server');
+            const time = resp.result.block_meta.header.time;
+            if (num_txs !== "0") {
+                const txs = resp.result.block.data.txs;
+                txs.map(etx => {
+                    const tx = decode(Buffer.from(etx, 'base64'));
+                    const hashtx = crypto.createHash('sha256').update(encode(tx)).digest().toString('hex').toUpperCase();
+                    loadTx(hashtx, time);
+                    return etx;
+                });
+            }
+            else
+                server.update({
+                    block: parseInt(i),
+                }).then(() => checkLastBlock(index));
+        } catch (e) {
+            console.log('Load block', e);
+            loadBlock(index);
         }
-        else
-            server.update({
-                block: parseInt(i),
-            }).then(() => checkLastBlock(index));
     });
 }
 function loadTx(hashTx, time) {
     return fetch('https://komodo.forest.network/tx?hash=0x' + hashTx, (error, meta, body) => {
-        const resp = JSON.parse(body.toString());
-        const success = resp.result.tx_result.tags;
-        if (success) {
-            const txSize = resp.result.tx.length;
-            const tx = decode(Buffer.from(resp.result.tx, 'base64'));
-            switch (tx.operation) {
-                case 'create_account': {
-                    createAccount(tx, time, txSize);
-                    break;
-                }
-                case 'payment': {
-                    payment(tx, time, txSize);
-                    break;
-                }
-                case 'update_account': {
-                    updateAccount(tx, time, txSize);
-                    break;
-                }
-                case 'post': {
-                    try {
-                        tx.params.content = PlainTextContent.decode(tx.params.content);
-                    } catch (e) { tx.params.content = undefined };
-                    post(hashTx, tx, time, txSize);
-                    break;
-                }
-                case 'interact': {
-                    try {
-                        tx.params.content = PlainTextContent.decode(tx.params.content);
-                    } catch (e) {
+        try {
+            const resp = JSON.parse(body.toString());
+            const success = resp.result.tx_result.tags;
+            if (success) {
+                const txSize = resp.result.tx.length;
+                const tx = decode(Buffer.from(resp.result.tx, 'base64'));
+                switch (tx.operation) {
+                    case 'create_account': {
+                        createAccount(tx, time, txSize);
+                        break;
+                    }
+                    case 'payment': {
+                        payment(tx, time, txSize);
+                        break;
+                    }
+                    case 'update_account': {
+                        updateAccount(tx, time, txSize);
+                        break;
+                    }
+                    case 'post': {
                         try {
-                            tx.params.content = ReactContent.decode(tx.params.content);
-                        }
-                        catch (e) { tx.params.content = undefined };
-                    };
-                    interact(tx, time, txSize);
-                    break;
-                }
-                default: {
-                    checkLastBlock(index);
-                    break;
+                            tx.params.content = PlainTextContent.decode(tx.params.content);
+                        } catch (e) { tx.params.content = undefined };
+                        post(hashTx, tx, time, txSize);
+                        break;
+                    }
+                    case 'interact': {
+                        try {
+                            tx.params.content = PlainTextContent.decode(tx.params.content);
+                        } catch (e) {
+                            try {
+                                tx.params.content = ReactContent.decode(tx.params.content);
+                            }
+                            catch (e) { tx.params.content = undefined };
+                        };
+                        interact(tx, time, txSize);
+                        break;
+                    }
+                    default: {
+                        checkLastBlock(index);
+                        break;
+                    }
                 }
             }
+        } catch (e) {
+            console.log('Load tx', e);
+            loadTx(hashTx, time)
         }
     })
 }
