@@ -83,8 +83,6 @@ function checkLastBlock(i) {
 }
 
 function loadBlock(i) {
-    // if (i % 100 === 0)
-    // console.log('loading ', i);
     fetch('https://komodo.forest.network/block?height=' + i, (error, meta, body) => {
         const resp = JSON.parse(body.toString());
         const num_txs = resp.result.block_meta.header.num_txs;
