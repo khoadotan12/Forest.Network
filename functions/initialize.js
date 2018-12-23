@@ -34,7 +34,7 @@ const ReactContent = vstruct([
 ]);
 function reloadBlock() {
     if (index === parseInt(MAX_BLOCK)) {
-        fetch('https://komodo.forest.network/abci_info', (error, meta, body) => {
+        fetch('https://fox.forest.network/abci_info', (error, meta, body) => {
             const resp = JSON.parse(body.toString());
             MAX_BLOCK = resp.result.response.last_block_height;
             if (index !== parseInt(MAX_BLOCK)) {
@@ -42,8 +42,9 @@ function reloadBlock() {
                 const ref = database.ref('/');
                 ref.once('value', snap => {
                     const list = snap.val().users;
+                    const now = moment();
                     for (let i in list)
-                        list[i].energy = increaseEnergy(list[i]);
+                        list[i].energy = increaseEnergy(list[i], now);
                     ref.update({
                         users: list,
                     })
@@ -388,17 +389,17 @@ function calculateBandwidth(account, time, txSize) {
     return Math.ceil(Math.max(0, (BANDWIDTH_PERIOD - diff) / BANDWIDTH_PERIOD) * bandwidth + txSize);
 }
 
-function increaseEnergy(account) {
+function increaseEnergy(account, time) {
     const bandwidthTime = account.lastTx;
     const energy = account.energy;
     const bandwidth = account.bandwidth;
     const bandwidthLimit = account.balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
     if (energy >= bandwidthLimit)
         return energy;
-    const diff = moment().unix() - moment(bandwidthTime).unix()
+    const diff = moment(time).unix() - moment(bandwidthTime).unix()
     if (diff >= BANDWIDTH_PERIOD)
         return bandwidthLimit;
-    return (bandwidthLimit - bandwidth)(1 + diff / BANDWIDTH_PERIOD);
+    return bandwidthLimit - bandwidth * (1 - diff / BANDWIDTH_PERIOD);
 }
 
 module.exports = {
