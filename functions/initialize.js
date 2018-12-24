@@ -200,9 +200,7 @@ function createAccount(tx, lastTx, txSize) {
                 energy: bandwidthLimit - bandwidth,
             })
         }
-    })]).then(() => {
-        return checkLastBlock(index);
-    }).catch(e => console.log(e));
+    })]).then(() => checkLastBlock(index)).catch(e => console.log(e));
 }
 
 function payment(tx, lastTx, txSize) {
@@ -259,9 +257,7 @@ function payment(tx, lastTx, txSize) {
                 energy: bandwidthLimit - bandwidth,
             });
         }
-    })]).then(() => {
-        return checkLastBlock(index);
-    }).catch(e => console.log(e));
+    })]).then(() => checkLastBlock(index)).catch(e => console.log(e));
 }
 
 function updateAccount(tx, lastTx, txSize) {
@@ -280,9 +276,7 @@ function updateAccount(tx, lastTx, txSize) {
                         lastTx,
                         bandwidth,
                         energy: bandwidthLimit - bandwidth,
-                    }).then(() => {
-                        return checkLastBlock(index);
-                    }).catch(e => console.log(e));
+                    }).then(() => checkLastBlock(index)).catch(e => console.log(e));
                 }
                 case 'picture': {
                     const picture = Buffer.from(tx.params.value).toString('base64');
@@ -292,9 +286,7 @@ function updateAccount(tx, lastTx, txSize) {
                         lastTx,
                         bandwidth,
                         energy: bandwidthLimit - bandwidth,
-                    }).then(() => {
-                        return checkLastBlock(index);
-                    }).catch(e => console.log(e));
+                    }).then(() => checkLastBlock(index)).catch(e => console.log(e));
                 }
                 case 'followings': {
                     try {
@@ -309,10 +301,15 @@ function updateAccount(tx, lastTx, txSize) {
                             lastTx,
                             bandwidth,
                             energy: bandwidthLimit - bandwidth,
-                        }).then(() => {
-                            return checkLastBlock(index);
-                        }).catch(e => console.log(e));
-                    } catch (e) { return checkLastBlock(index) }
+                        }).then(() => checkLastBlock(index)).catch(e => console.log(e));
+                    } catch (e) {
+                        return account.update({
+                            sequence: sequence + 1,
+                            lastTx,
+                            bandwidth,
+                            energy: bandwidthLimit - bandwidth,
+                        }).then(() => checkLastBlock(index));
+                    }
                 }
                 default: {
                     return account.update({
@@ -320,9 +317,7 @@ function updateAccount(tx, lastTx, txSize) {
                         lastTx,
                         bandwidth,
                         energy: bandwidthLimit - bandwidth,
-                    }).then(() => {
-                        return checkLastBlock(index);
-                    }).catch(e => console.log(e));
+                    }).then(() => checkLastBlock(index)).catch(e => console.log(e));
                 }
             }
         }
@@ -358,9 +353,7 @@ function post(hashTx, tx, lastTx, txSize) {
                 bandwidth,
                 lastTx,
                 energy: bandwidthLimit - bandwidth,
-            }).then(() => {
-                return checkLastBlock(index);
-            }).catch(e => console.log(e));
+            }).then(() => checkLastBlock(index)).catch(e => console.log(e));
         }
         else
             if (snap.exists()) {
@@ -372,9 +365,7 @@ function post(hashTx, tx, lastTx, txSize) {
                     bandwidth,
                     lastTx,
                     energy: bandwidthLimit - bandwidth,
-                }).then(() => {
-                    return checkLastBlock(index);
-                }).catch(e => console.log(e));
+                }).then(() => checkLastBlock(index)).catch(e => console.log(e));
             } else
                 checkLastBlock(index);
     });
