@@ -95,7 +95,7 @@ function checkLastBlock(i) {
 }
 
 function loadBlock(i) {
-    fetch('https://komodo.forest.network/block?height=' + i, (error, meta, body) => {
+    fetch('https://fox.forest.network/block?height=' + i, (error, meta, body) => {
         try {
             const resp = JSON.parse(body.toString());
             const num_txs = resp.result.block_meta.header.num_txs;
@@ -121,7 +121,7 @@ function loadBlock(i) {
     });
 }
 function loadTx(hashTx, time) {
-    return fetch('https://komodo.forest.network/tx?hash=0x' + hashTx, (error, meta, body) => {
+    return fetch('https://fox.forest.network/tx?hash=0x' + hashTx, (error, meta, body) => {
         try {
             const resp = JSON.parse(body.toString());
             const success = resp.result.tx_result.tags;
