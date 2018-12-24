@@ -144,6 +144,8 @@ function loadTx(hashTx, time) {
                     case 'post': {
                         try {
                             tx.params.content = PlainTextContent.decode(tx.params.content);
+                            if (tx.params.content.type !== 1)
+                                tx.params.content = undefined;
                         } catch (e) { tx.params.content = undefined };
                         post(hashTx, tx, time, txSize);
                         break;
@@ -151,9 +153,13 @@ function loadTx(hashTx, time) {
                     case 'interact': {
                         try {
                             tx.params.content = PlainTextContent.decode(tx.params.content);
+                            if (tx.params.content.type !== 1)
+                                tx.params.content = undefined;
                         } catch (e) {
                             try {
                                 tx.params.content = ReactContent.decode(tx.params.content);
+                                if (tx.params.content.type !== 2)
+                                    tx.params.content = undefined;
                             }
                             catch (e) { tx.params.content = undefined };
                         };
@@ -316,7 +322,8 @@ function updateAccount(tx, lastTx, txSize) {
                 }
             }
         }
-        else checkLastBlock(index);
+        else
+            checkLastBlock(index);
     });
 }
 
@@ -352,7 +359,20 @@ function post(hashTx, tx, lastTx, txSize) {
             }).catch(e => console.log(e));
         }
         else
-            checkLastBlock(index);
+            if (snap.exists()) {
+                const sequence = snap.val().sequence;
+                const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
+                const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
+                return account.update({
+                    sequence: sequence + 1,
+                    bandwidth,
+                    lastTx,
+                    energy: bandwidthLimit - bandwidth,
+                }).then(() => {
+                    return checkLastBlock(index);
+                }).catch(e => console.log(e));
+            } else
+                checkLastBlock(index);
     });
 }
 
@@ -360,7 +380,7 @@ function interact(tx, lastTx, txSize) {
     const account = database.ref('/users/' + tx.account);
     const content = tx.params.content;
     account.once('value', snap => {
-        if (snap.exists() && content) {
+        if (snap.exists()) {
             const sequence = snap.val().sequence;
             const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
@@ -369,33 +389,37 @@ function interact(tx, lastTx, txSize) {
                 bandwidth,
                 lastTx,
                 energy: bandwidthLimit - bandwidth,
-            });
-            switch (content.type) {
-                case 1:
-                    const cmt = database.ref('/posts/' + tx.params.object + '/comment/');
-                    return cmt.push({ account: tx.account, content: content.text }).then(() => checkLastBlock(index));
-                case 2:
-                    const react = database.ref('/posts/' + tx.params.object + '/react/' + tx.account);
-                    switch (content.reaction) {
-                        case 0:
-                            return react.remove().then(() => checkLastBlock(index));
+            }).then(() => {
+                if (content) {
+                    switch (content.type) {
                         case 1:
-                            return react.set('like').then(() => checkLastBlock(index));
+                            const cmt = database.ref('/posts/' + tx.params.object + '/comment/');
+                            return cmt.push({ account: tx.account, content: content.text }).then(() => checkLastBlock(index));
                         case 2:
-                            return react.set('love').then(() => checkLastBlock(index));
-                        case 3:
-                            return react.set('haha').then(() => checkLastBlock(index));
-                        case 4:
-                            return react.set('wow').then(() => checkLastBlock(index));
-                        case 5:
-                            return react.set('sad').then(() => checkLastBlock(index));
-                        case 6:
-                            return react.set('angry').then(() => checkLastBlock(index));
-                        default: return checkLastBlock(index);
+                            const react = database.ref('/posts/' + tx.params.object + '/react/' + tx.account);
+                            switch (content.reaction) {
+                                case 0:
+                                    return react.remove().then(() => checkLastBlock(index));
+                                case 1:
+                                    return react.set('like').then(() => checkLastBlock(index));
+                                case 2:
+                                    return react.set('love').then(() => checkLastBlock(index));
+                                case 3:
+                                    return react.set('haha').then(() => checkLastBlock(index));
+                                case 4:
+                                    return react.set('wow').then(() => checkLastBlock(index));
+                                case 5:
+                                    return react.set('sad').then(() => checkLastBlock(index));
+                                case 6:
+                                    return react.set('angry').then(() => checkLastBlock(index));
+                                default: return checkLastBlock(index);
+                            }
+                        default:
+                            return checkLastBlock(index);
                     }
-                default:
-                    return checkLastBlock(index);
-            }
+                } else
+                    checkLastBlock(index);
+            });
         }
         else
             checkLastBlock(index);
