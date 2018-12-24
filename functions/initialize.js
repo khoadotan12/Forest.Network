@@ -304,7 +304,11 @@ function updateAccount(tx, lastTx, txSize) {
                             return encaddr;
                         });
                         return account.update({
+                            sequence: sequence + 1,
                             followings: followings.addresses,
+                            lastTx,
+                            bandwidth,
+                            energy: bandwidthLimit - bandwidth,
                         }).then(() => {
                             return checkLastBlock(index);
                         }).catch(e => console.log(e));
