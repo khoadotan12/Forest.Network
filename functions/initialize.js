@@ -190,11 +190,10 @@ function createAccount(tx, lastTx, txSize) {
     }),
     account.once('value', snap => {
         if (snap.exists()) {
-            const sequence = snap.val().sequence;
             const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
             account.update({
-                sequence: sequence + 1,
+                sequence: tx.sequence,
                 lastTx,
                 bandwidth,
                 energy: bandwidthLimit - bandwidth,
@@ -232,7 +231,6 @@ function payment(tx, lastTx, txSize) {
     }),
     account.once('value', snap => {
         if (snap.exists()) {
-            const sequence = snap.val().sequence;
             const balance = snap.val().balance;
             const bandwidthLimit = (balance - tx.params.amount) / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
@@ -249,7 +247,7 @@ function payment(tx, lastTx, txSize) {
                 address: tx.account,
             }];
             account.update({
-                sequence: sequence + 1,
+                sequence: tx.sequence,
                 balance: balance - tx.params.amount,
                 lastTx,
                 bandwidth,
@@ -264,14 +262,13 @@ function updateAccount(tx, lastTx, txSize) {
     const account = database.ref('/users/' + tx.account);
     account.once('value', snap => {
         if (snap.exists()) {
-            const sequence = snap.val().sequence;
             const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
             switch (tx.params.key) {
                 case 'name': {
                     const name = Buffer.from(tx.params.value).toString('utf-8');
                     return account.update({
-                        sequence: sequence + 1,
+                        sequence: tx.sequence,
                         name,
                         lastTx,
                         bandwidth,
@@ -281,7 +278,7 @@ function updateAccount(tx, lastTx, txSize) {
                 case 'picture': {
                     const picture = Buffer.from(tx.params.value).toString('base64');
                     return account.update({
-                        sequence: sequence + 1,
+                        sequence: tx.sequence,
                         picture,
                         lastTx,
                         bandwidth,
@@ -296,7 +293,7 @@ function updateAccount(tx, lastTx, txSize) {
                             return encaddr;
                         });
                         return account.update({
-                            sequence: sequence + 1,
+                            sequence: tx.sequence,
                             followings: followings.addresses,
                             lastTx,
                             bandwidth,
@@ -304,7 +301,7 @@ function updateAccount(tx, lastTx, txSize) {
                         }).then(() => checkLastBlock(index)).catch(e => console.log(e));
                     } catch (e) {
                         return account.update({
-                            sequence: sequence + 1,
+                            sequence: tx.sequence,
                             lastTx,
                             bandwidth,
                             energy: bandwidthLimit - bandwidth,
@@ -313,7 +310,7 @@ function updateAccount(tx, lastTx, txSize) {
                 }
                 default: {
                     return account.update({
-                        sequence: sequence + 1,
+                        sequence: tx.sequence,
                         lastTx,
                         bandwidth,
                         energy: bandwidthLimit - bandwidth,
@@ -331,7 +328,6 @@ function post(hashTx, tx, lastTx, txSize) {
     const content = tx.params.content;
     account.once('value', snap => {
         if (snap.exists() && content) {
-            const sequence = snap.val().sequence;
             const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
             let posts = snap.val().posts;
@@ -348,7 +344,7 @@ function post(hashTx, tx, lastTx, txSize) {
                 }
             });
             return account.update({
-                sequence: sequence + 1,
+                sequence: tx.sequence,
                 posts: posts,
                 bandwidth,
                 lastTx,
@@ -357,11 +353,10 @@ function post(hashTx, tx, lastTx, txSize) {
         }
         else
             if (snap.exists()) {
-                const sequence = snap.val().sequence;
                 const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
                 const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
                 return account.update({
-                    sequence: sequence + 1,
+                    sequence: tx.sequence,
                     bandwidth,
                     lastTx,
                     energy: bandwidthLimit - bandwidth,
@@ -376,11 +371,10 @@ function interact(tx, lastTx, txSize) {
     const content = tx.params.content;
     account.once('value', snap => {
         if (snap.exists()) {
-            const sequence = snap.val().sequence;
             const bandwidthLimit = snap.val().balance / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             const bandwidth = calculateBandwidth(snap.val(), lastTx, txSize);
             account.update({
-                sequence: sequence + 1,
+                sequence: tx.sequence,
                 bandwidth,
                 lastTx,
                 energy: bandwidthLimit - bandwidth,
