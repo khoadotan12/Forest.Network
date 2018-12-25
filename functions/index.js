@@ -4,7 +4,7 @@ const fetch = require('node-fetch');
 const app = express();
 const { decode } = require('./transaction');
 const { initialize } = require('./initialize');
-// initialize();
+initialize();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded());
 const admin = require('firebase-admin');
