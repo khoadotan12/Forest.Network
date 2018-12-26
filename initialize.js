@@ -64,7 +64,7 @@ function initialize() {
     console.log('Getting data');
     server.once('value', snap => {
         if (snap.exists()) {
-            index = snap.val().block + 1;
+            index = 26523;//snap.val().block + 1;
             getabci_info();
         }
     });
@@ -215,11 +215,13 @@ function payment(tx, lastTx, txSize) {
                     type: 'receive',
                     amount: tx.params.amount,
                     address: tx.account,
+                    time: lastTx,
                 })
             else payment = [{
                 type: 'receive',
                 amount: tx.params.amount,
                 address: tx.account,
+                time: lastTx,
             }];
             const newenergy = tx.params.amount / MAX_CELLULOSE * NETWORK_BANDWIDTH;
             address.update({
@@ -239,12 +241,14 @@ function payment(tx, lastTx, txSize) {
                 payment.push({
                     type: 'send',
                     amount: tx.params.amount,
-                    address: tx.account,
+                    address: tx.params.address,
+                    time: lastTx,
                 })
             else payment = [{
                 type: 'send',
                 amount: tx.params.amount,
-                address: tx.account,
+                address: tx.params.address,
+                time: lastTx,
             }];
             account.update({
                 sequence: tx.sequence,
@@ -340,6 +344,7 @@ function post(hashTx, tx, lastTx, txSize) {
                 if (!snap.exists()) {
                     postcontent.set({
                         content: content.text,
+                        time: lastTx,
                     });
                 }
             });
@@ -383,7 +388,7 @@ function interact(tx, lastTx, txSize) {
                     switch (content.type) {
                         case 1:
                             const cmt = database.ref('/posts/' + tx.params.object + '/comment/');
-                            return cmt.push({ account: tx.account, content: content.text }).then(() => checkLastBlock(index));
+                            return cmt.push({ account: tx.account, content: content.text, time: lastTx }).then(() => checkLastBlock(index));
                         case 2:
                             const react = database.ref('/posts/' + tx.params.object + '/react/' + tx.account);
                             switch (content.reaction) {
