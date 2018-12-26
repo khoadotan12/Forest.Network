@@ -76,7 +76,7 @@ function getabci_info() {
             const resp = JSON.parse(body.toString());
             MAX_BLOCK = resp.result.response.last_block_height;
             loadBlock(index);
-            setInterval(() => reloadBlock(), 60000);
+            setInterval(() => reloadBlock(), 1000);
             console.log('Loaded block');
         } catch (e) {
             getabci_info();
