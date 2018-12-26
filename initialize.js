@@ -64,7 +64,7 @@ function initialize() {
     console.log('Getting data');
     server.once('value', snap => {
         if (snap.exists()) {
-            index = 26523;//snap.val().block + 1;
+            index = snap.val().block + 1;
             getabci_info();
         }
     });
